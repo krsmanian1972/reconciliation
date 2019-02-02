@@ -1,0 +1,274 @@
+<html xmlns:concordion="http://www.concordion.org/2007/concordion">
+
+    <head>
+        <link href="../concordion.css" rel="stylesheet" type="text/css" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    </head>
+    <title>CPT Data Reconciliation Feature</title>
+
+    <body>
+
+        <h1>Context</h1>
+		
+		<p>We are provided with a set of CPT data obtained from two distinct sources.</p>
+		<p>Let us call the first source as "Source" and the second source as "Harvested".</p>
+		<p>The CPTs obtained from the first source is considered to be our source of truth.</p>
+		<p>We need to reconcile the Harvested data with the Source for accuracy.</p>
+		
+       	<h2>Objective</h2>
+       	
+       	<p>Reconcile the list of CPTs provided by both the sources.</p> 
+       	
+       	<p>Classify each CPT data belongs to the Harvested bucket, as either matching or not matching, by comparing it with the Source</p>
+
+       	<div concordion:example="example-1">
+       	    <h2>Example - 1</h2>
+       	    
+       	    <p>Two entries can be considered as similar; if they share a common CPT code and Modifier</p>
+       	    
+       	    <h3>Given</h3>
+       	    
+       	    <p>Source CPT Codes</p>
+       	    
+			<table concordion:execute="addSource(#cptCode, #modifier,#amount)">
+				<thead>
+					<tr>
+						<th concordion:set="#cptCode">CPT Code</th>
+						<th concordion:set="#modifier">Modifier</th>
+						<th concordion:set="#amount">Amount</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>99214</td>
+						<td>25</td>
+						<td></td>
+					</tr>
+				</tbody>
+			</table>
+			
+			<p>Harvested CPT Codes</p>
+   	    	    
+			<table concordion:execute="addHarvested(#cptCode, #modifier,#amount)">
+				<thead>
+					<tr>
+						<th concordion:set="#cptCode">CPT Code</th>
+						<th concordion:set="#modifier">Modifier</th>
+						<th concordion:set="#amount">Amount</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>99214</td>
+						<td></td>
+						<td>1</td>
+					</tr>
+					<tr>
+						<td>99214</td>
+						<td>25</td>
+						<td>3</td>
+					</tr>
+				</tbody>
+			</table>
+		
+			<h3>Expectation</h3>	
+			<p>Two entries can be considered as similar; if they share a common CPT code and Modifier</p>
+				
+			<table concordion:execute ="#result=match()">
+				<tr>
+					<th concordion:assertEquals="#result.harvested.cptCode">Harvested CPT Code</th>
+					<th concordion:assertEquals="#result.harvested.modifier">Harvested Modifier</th>
+					<th concordion:assertEquals="#result.harvested.amount">Harvested Amount</th>
+					<th concordion:assertEquals="#result.source.cptCode">Source CPT Code</th>
+					<th concordion:assertEquals="#result.source.modifier">Source Modifier</th>
+					<th concordion:assertEquals="#result.source.amount">Source Amount</th>
+					<th concordion:assertEquals="#result.matchType">Match Type</th>
+				</tr>
+				<tr>
+					<td>99214</td>
+					<td></td>
+					<td>1</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td>NoMatch</td>
+				</tr>
+				<tr>
+					<td>92214</td>
+					<td>25</td>
+					<td>3</td>
+					<td>99214</td>
+					<td>25</td>
+					<td></td>
+					<td>Match</td>
+				</tr>
+			</table>
+ 		</div>
+ 		
+ 		<div concordion:example="example-2">
+       	    <h2>Example - 2</h2>
+       	    <p>Discovering Soft Matches in the absence of any conflicts</p>
+       	    <h3>Given</h3>
+       	    
+       	    <p>Source CPT Codes</p>
+       	    
+			<table concordion:execute="addSourceCPT(#cptCode, #modifier,#amount)">
+				<thead>
+					<tr>
+						<th concordion:set="#cptCode">CPT Code</th>
+						<th concordion:set="#modifier">Modifier</th>
+						<th concordion:set="#amount">Amount</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>99214</td>
+						<td>25</td>
+						<td>3</td>
+					</tr>
+				</tbody>
+			</table>
+			
+			<p>Harvested CPT Codes</p>
+ 			<table concordion:execute="addHarvestedCPT(#cptCode, #modifier,#amount)">
+				<thead>
+					<tr>
+						<th concordion:set="#cptCode">CPT Code</th>
+						<th concordion:set="#modifier">Modifier</th>
+						<th concordion:set="#amount">Amount</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>99213</td>
+						<td></td>
+						<td>1</td>
+					</tr>
+					<tr>
+						<td>99214</td>
+						<td>30</td>
+						<td>3</td>
+					</tr>
+				</tbody>
+			</table>
+		
+			<h3>Expectation</h3>	
+			<p> The 2nd Harvested entry can be matched with 1st entry of the Source; if it shares a common CPT code but a different modifier if the similar amount</p>
+			<table>
+				<tr concordion:execute ="#result=match()">
+					<th concordion:assertEquals="#result.harvested.cptCode">Harvested CPT Code</th>
+					<th concordion:assertEquals="#result.harvested.modifier">Harvested Modifier</th>
+					<th concordion:assertEquals="#result.harvested.amount">Harvested Amount</th>
+					<th concordion:assertEquals="#result.source.cptCode">Source CPT Code</th>
+					<th concordion:assertEquals="#result.source.modifier">Source Modifier</th>
+					<th concordion:assertEquals="#result.source.amount">Source Amount</th>
+					<th concordion:assertEquals="#result.matchType">Match Type</th>
+				</tr>
+				<tr>
+					<td>99213</td>
+					<td></td>
+					<td>1</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td>NoMatch</td>
+				</tr>
+				<tr>
+					<td>92214</td>
+					<td>30</td>
+					<td>3</td>
+					<td>99214</td>
+					<td>25</td>
+					<td>3</td>
+					<td>Match</td>
+				</tr>
+			</table>
+ 		</div>
+ 		
+ 		<div concordion:example="example-3">
+       	    <h2>Example - 3</h2>
+       	    <p>Rejecting conflicting Soft Matches. The harvested entry matches with more than one source entry by the above rule. </p>
+       	    <h3>Given</h3>
+       	    
+       	    <p>Source CPT Codes</p>
+       	    
+			<table concordion:execute="addSourceCPT(#cptCode, #modifier,#amount)">
+				<thead>
+					<tr>
+						<th concordion:set="#cptCode">CPT Code</th>
+						<th concordion:set="#modifier">Modifier</th>
+						<th concordion:set="#amount">Amount</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>99214</td>
+						<td>25</td>
+						<td>3</td>
+					</tr>
+					<tr>
+						<td>99214</td>
+						<td>29</td>
+						<td>3</td>
+					</tr>
+				</tbody>
+			</table>
+			
+			<p>Harvested CPT Codes</p>
+       	    
+			<table concordion:execute="addHarvestedCPT(#cptCode, #modifier,#amount)">
+				<thead>
+					<tr>
+						<th concordion:set="#cptCode">CPT Code</th>
+						<th concordion:set="#modifier">Modifier</th>
+						<th concordion:set="#amount">Amount</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>99213</td>
+						<td></td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>99214</td>
+						<td>30</td>
+						<td>3</td>
+					</tr>
+				</tbody>
+			</table>
+		
+			<h3>Expectation</h3>	
+			
+			<table>
+				<tr concordion:execute ="#result=match()">
+					<th concordion:assertEquals="#result.harvested.cptCode">Harvested CPT Code</th>
+					<th concordion:assertEquals="#result.harvested.modifier">Harvested Modifier</th>
+					<th concordion:assertEquals="#result.harvested.amount">Harvested Amount</th>
+					<th concordion:assertEquals="#result.source.cptCode">Source CPT Code</th>
+					<th concordion:assertEquals="#result.source.modifier">Source Modifier</th>
+					<th concordion:assertEquals="#result.source.amount">Source Amount</th>
+					<th concordion:assertEquals="#result.matchType">Match Type</th>
+				</tr>
+				<tr>
+					<td>99213</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td>NoMatch</td>
+				</tr>
+				<tr>
+					<td>92214</td>
+					<td>30</td>
+					<td>3</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td>NoMatch</td>
+				</tr>
+			</table>
+ 		</div>
+    </body>
+</html>
